@@ -1,6 +1,6 @@
 from models import *
 from datetime import datetime
-from MerchandiseGUI import *
+
 #This module handles the database calls to the gui
 
 def create_tables():
@@ -46,9 +46,47 @@ def add_game_data():
     )
 def add_sale_record_data():
     SaleRecord.create(
-        merchandiseID = MerchandiseItem.get_by_id(MerchandiseItem.select(id).where(MerchandiseItem.description=="Sweater")),
-        gameID = MerchandiseItem.get_by_id(MerchandiseItem.select(id).where(Game.venue=="Madison Square Garden")),
+        merchandiseID = MerchandiseItem.get_by_id(2),
+        gameID = MerchandiseItem.get_by_id(1),
         amount = 50
     )
-def init_gui():
-    window.mainloop()
+
+
+def get_all_games():
+    list = []
+    query = Game.select()
+    for row in query:
+        list.append(row.venue)
+    comboList = tuple(list)
+    return comboList
+
+
+def get_all_items():
+    list = []
+    query = MerchandiseItem.select()
+    for row in query:
+        list.append(row.description)
+    comboList = tuple(list)
+    return comboList
+
+
+def add_item(type, description, amount, price):
+    MerchandiseItem.create(
+        type=type,
+        description=description,
+        amount=amount,
+        price=price
+    )
+def add_venue(venue, date):
+    Game.create(
+        venue=venue,
+        date=date
+    )
+def add_sale_item(description, venue, amount):
+    gameID = Game.get(Game.venue == venue).id
+    merchandiseID = MerchandiseItem.get(MerchandiseItem.description==description).id
+    SaleRecord.create(
+        merchandiseID=merchandiseID,
+        gameID=gameID,
+        amount=amount
+    )

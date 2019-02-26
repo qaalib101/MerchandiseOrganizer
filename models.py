@@ -13,12 +13,12 @@ class Game(BaseModel):
 class MerchandiseItem(BaseModel):
     type = CharField()
     description = CharField(unique=True)
-    amount: IntegerField()
+    amount = IntegerField()
     price = DecimalField()
 
 
 class SaleRecord(BaseModel):
     gameID = ForeignKeyField(Game)
     merchandiseID = ForeignKeyField(MerchandiseItem)
-    amountSold = IntegerField()
+    amount = IntegerField()
 

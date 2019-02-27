@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-
+import peewee
 import databaseHandler
 from datetime import datetime
 
@@ -11,26 +11,41 @@ window.title("Sports Merchandise Application")
 def add_sale(item, venue, amount):
     try:
         databaseHandler.add_sale_item(item.get(), venue.get(), amount.get())
-    except ValueError as e:
-        show_message(e)
+    except ValueError:
+        show_message("Enter a correct value")
+    except peewee.DoesNotExist:
+        create_sale(item, venue, amount)
+    except BaseException:
+        show_message('Amount entered is bigger than in stock')
     amount.delete(0, END)
+
+
+def create_sale(item, venue, amount):
+    try:
+        databaseHandler.create_sale_record(item.get(), venue.get(), amount.get())
+    except BaseException:
+        show_message('Amount entered is bigger than in stock')
+    amount.delete(0, END)
+
+
 def add_venue(location, day, month, year):
     try:
         date = datetime(int(year.get()), int(month.get()), int(day.get()))
         databaseHandler.add_venue(location.get(), date)
-        update_win()
+        update_venue()
     except ValueError as e:
         show_message(e)
     except TypeError as e:
         show_message(e)
-
     location.delete(0, END)
 def add_item(type, description, amount, price):
     try:
         databaseHandler.add_item(type.get(), description.get(), amount.get(), price.get())
-        update_win()
-    except ValueError as e:
-        show_message(e)
+        update_item()
+    except ValueError:
+        show_message("Input correct values")
+    except peewee.IntegrityError:
+        show_message("Cannot add another")
     description.delete(0, END)
     amount.delete(0, END)
     price.delete(0, END)
@@ -39,6 +54,7 @@ def init_gui(items, games):
     init_add_item()
     init_add_venue()
     init_add_sale(items, games)
+    init_add_analysis()
     window.mainloop()
 def init_add_item():
     typelabel = Label(window, text="Type")
@@ -96,9 +112,9 @@ def init_add_sale(saleItems, saleVenues):
     itemLabel = Label(window, text="Item")
     itemLabel.grid(column=0, row=4)
     venue = Label(window, text="Location")
-    venue.grid(column=2, row=0)
+    venue.grid(column=2, row=4)
     amount = Label(window, text="Amount")
-    amount.grid(column=2, row=0)
+    amount.grid(column=2, row=4)
 
     saleItem = ttk.Combobox(window, width=15)
     saleItem['values'] = saleItems
@@ -115,16 +131,42 @@ def init_add_sale(saleItems, saleVenues):
     saleButton = Button(window, text="Add a sale", command=lambda: add_sale(saleItem, saleVenue, saleAmount))
     saleButton.grid(column=4, row=5)
 
+
+def init_add_analysis():
+    analysisListBox = Listbox(window, width=20)
+    analysisListBox.grid(column=1, row=7, padx=5, pady=5)
+    topSalesButton = Button(window, text="Top Items Sold", command=lambda: get_top_sales(analysisListBox))
+    topSalesButton.grid(column=0, row=6)
+    itemComboBox = ttk.Combobox(window, width=15)
+    itemComboBox['values'] = databaseHandler.get_all_items()
+    itemComboBox.current(0)
+    itemComboBox.grid(column=1, row=6)
+    amountSoldButton= Button(window, text="Amount Sold", command=lambda: get_amount_sold(analysisListBox, itemComboBox))
+    amountSoldButton.grid(column=2, row=6)
+
+
 def show_message(message):
     messagebox.showinfo("Alert", message)
 
-def update_win():
+def update_item():
     saleItem = ttk.Combobox(window, width=15)
     saleItem['values'] = databaseHandler.get_all_items()
-    saleItem.current(1)
+    saleItem.current(0)
     saleItem.grid(column=0, row=5)
 
+def update_venue():
     saleVenue = ttk.Combobox(window, width=15)
     saleVenue['values'] = databaseHandler.get_all_games()
-    saleVenue.current(1)
+    saleVenue.current(0)
     saleVenue.grid(column=1, row=5)
+def get_top_sales(listBox):
+    listBox.delete(0, END)
+    list = databaseHandler.top_sales()
+    for item in list:
+        listBox.insert(END, item)
+
+def get_amount_sold(listBox, comboBox):
+    listBox.delete(0, END)
+    list = databaseHandler.amount_sold(comboBox.get())
+    for item in list:
+        listBox.insert(END, item)
